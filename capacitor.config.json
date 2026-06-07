@@ -1,0 +1,17 @@
+{
+  "appId": "com.believersguidelite.app",
+  "appName": "BelieversFlow",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "buildOptions": {
+      "keystorePath": "believers-flow.jks",
+      "keystorePassword": "password123",
+      "keystoreAlias": "key0",
+      "keystoreAliasPassword": "password123"
+    }
+  }
+}

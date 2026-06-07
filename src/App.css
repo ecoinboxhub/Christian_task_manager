@@ -1,0 +1,383 @@
+#app {
+  max-width: 500px;
+  margin: 0 auto;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--dark-bg);
+}
+
+header {
+  background: linear-gradient(135deg, var(--dark-card), var(--spiritual-purple));
+  padding: 20px;
+  text-align: center;
+  border-bottom: 2px solid var(--holy-gold);
+}
+
+.logo {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--holy-gold);
+  margin-bottom: 12px;
+}
+
+.verse-container {
+  background: rgba(255,255,255,0.05);
+  padding: 12px;
+  border-radius: var(--radius);
+}
+
+#verse-text {
+  font-size: 0.95rem;
+  font-style: italic;
+  color: var(--purity-white);
+  line-height: 1.5;
+  margin-bottom: 4px;
+}
+
+#verse-ref {
+  font-size: 0.8rem;
+  color: var(--holy-gold);
+}
+
+#main-nav {
+  display: flex;
+  background: var(--dark-card);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.nav-item {
+  flex: 1;
+  padding: 14px 8px;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.nav-item.active {
+  color: var(--holy-gold);
+}
+
+.nav-item.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 20%;
+  width: 60%;
+  height: 3px;
+  background: var(--holy-gold);
+  border-radius: 2px 2px 0 0;
+}
+
+#view-container {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.view {
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.filter-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.filter-btn {
+  flex: 1;
+  padding: 8px;
+  background: var(--dark-card);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter-btn.active {
+  background: var(--heavenly-blue);
+  color: white;
+  border-color: var(--heavenly-blue);
+}
+
+.input-group {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.input-group input,
+.input-group select {
+  flex: 1;
+  padding: 12px;
+  background: var(--dark-card);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  color: var(--text-light);
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.input-group input:focus,
+.input-group select:focus {
+  border-color: var(--heavenly-blue);
+}
+
+.input-group select option {
+  background: var(--dark-card);
+  color: var(--text-light);
+}
+
+.input-group button,
+.card button,
+.primary-btn {
+  padding: 12px 20px;
+  background: var(--heavenly-blue);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+  white-space: nowrap;
+}
+
+.input-group button:hover,
+.card button:hover,
+.primary-btn:hover {
+  background: #2a6bc5;
+}
+
+.input-group button:active,
+.card button:active,
+.primary-btn:active {
+  transform: scale(0.97);
+}
+
+.primary-btn {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.primary-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+#task-list {
+  list-style: none;
+}
+
+.task-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  background: var(--dark-card);
+  border-radius: var(--radius);
+  margin-bottom: 8px;
+  transition: transform 0.1s;
+}
+
+.task-item:hover {
+  transform: translateX(2px);
+}
+
+.task-item.completed {
+  opacity: 0.6;
+}
+
+.task-item.completed .task-text span {
+  text-decoration: line-through;
+}
+
+.task-item input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--spiritual-purple);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.task-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.task-text span {
+  font-size: 0.95rem;
+  color: var(--text-light);
+}
+
+.task-cat {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 4px;
+  width: fit-content;
+}
+
+.task-cat.spiritual {
+  background: rgba(123, 45, 142, 0.3);
+  color: #c084d8;
+}
+
+.task-cat.personal {
+  background: rgba(58, 123, 213, 0.3);
+  color: #7fb5f0;
+}
+
+.task-cat.service {
+  background: rgba(39, 174, 96, 0.3);
+  color: #6ddb9e;
+}
+
+.delete-btn {
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 4px;
+  opacity: 0.5;
+  transition: opacity 0.2s;
+  flex-shrink: 0;
+}
+
+.delete-btn:hover {
+  opacity: 1;
+}
+
+.card {
+  background: var(--dark-card);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.card h3 {
+  font-size: 1.1rem;
+  margin-bottom: 6px;
+  color: var(--holy-gold);
+}
+
+.card p {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+
+.card input {
+  width: 100%;
+  padding: 12px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  color: var(--text-light);
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+  outline: none;
+}
+
+.card input:focus {
+  border-color: var(--heavenly-blue);
+}
+
+.prayer-input {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.prayer-input input {
+  margin-bottom: 0;
+}
+
+.prayer-log-item {
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  font-size: 0.85rem;
+  color: var(--text-light) !important;
+}
+
+.study-current {
+  margin-top: 10px;
+  color: var(--success-green) !important;
+  font-weight: 600;
+}
+
+.balance-viz {
+  width: 100%;
+  height: 24px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.balance-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--spiritual-purple), var(--heavenly-blue));
+  border-radius: 12px;
+  transition: width 0.4s ease;
+  min-width: 4px;
+}
+
+#balance-stats {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-light) !important;
+  text-align: center;
+}
+
+.ai-box {
+  margin-top: 12px;
+  padding: 16px;
+  background: rgba(255,255,255,0.05);
+  border-radius: var(--radius);
+  border-left: 3px solid var(--holy-gold);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--text-light);
+}
+
+.empty-state {
+  text-align: center;
+  color: var(--text-secondary);
+  padding: 40px 20px;
+  font-style: italic;
+}
+
+footer {
+  text-align: center;
+  padding: 16px;
+  background: var(--dark-card);
+  border-top: 1px solid rgba(255,255,255,0.05);
+  margin-top: auto;
+}
+
+footer p {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}

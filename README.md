@@ -1,43 +1,16 @@
-# Believers Task Flow
+# React + Vite
 
-**Believers Task Flow** is a lightweight Christian task manager and spiritual growth tracker. Built with a focus on simplicity and faith, it helps you manage your daily responsibilities while keeping your spiritual walk at the center.
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-## 🌟 Features
-- **Lightweight To-Do**: Add, complete, and filter tasks with zero bloat.
-- **Prayer Tracker**: Log your daily prayer time and stay consistent.
-- **Bible Study Planner**: Plan and track your scripture reading.
-- **Christian Task Balancer**: Visualize how your day is balanced between spiritual and daily tasks.
-- **Offline-First**: Your data stays on your device using `localStorage`.
-- **AI Recommendations**: Get activity suggestions powered by GROQ LLM.
+Currently, two official plugins are available:
 
-## 🚀 Getting Started
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
 
-### Local Development (Web)
-1. Clone the repository.
-2. Open `www/index.html` in any modern web browser.
-3. To enable AI features, create a `.env` file (or set via UI) with your `GROQ_API_KEY`.
+## React Compiler
 
-### Build Android APK
-1. Ensure you have **Java JDK** and **Android SDK/Gradle** installed.
-2. Navigate to the `android/` directory.
-3. Run the Gradle build:
-   ```bash
-   ./gradlew assembleRelease
-   ```
-4. The signed APK will be located at `android/app/build/outputs/apk/release/app-release.apk`.
-5. A copy will be placed in the project root as `believersguidelite.apk`.
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
-## 🛠 Tech Stack
-- **Frontend**: Vanilla HTML/CSS/JS
-- **Native Wrapper**: Android WebView
-- **Build System**: Gradle
-- **AI Integration**: GROQ API
+## Expanding the ESLint configuration
 
-## 📂 Project Structure
-- `www/`: Web application source code.
-- `android/`: Android Studio project.
-- `docs/`: Product documentation (PRD, SWR, etc.).
-- `believersguidelite.apk`: Production-ready APK.
-
-## 📝 License
-This project is open-source and intended for the benefit of the believer community.
+If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
