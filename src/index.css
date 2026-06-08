@@ -9,7 +9,7 @@
   --holy-gold: #f2c94c;
   --spiritual-purple: #7b2d8e;
   --purity-white: #f8f9fa;
-  --dark-bg: #1a1a2e;
+  --dark-bg: #0a0a1a;
   --dark-card: #16213e;
   --success-green: #27ae60;
   --danger-red: #e74c3c;
@@ -33,5 +33,11 @@ body {
   background: var(--dark-bg);
   color: var(--text-light);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
+}
+
+::selection {
+  background: rgba(242, 201, 76, 0.2);
+  color: var(--holy-gold);
 }
