@@ -79,6 +79,3 @@ async def chat(req: ChatRequest):
         raise HTTPException(status_code=e.response.status_code, detail="GROQ API error")
     except httpx.RequestError:
         raise HTTPException(status_code=502, detail="Failed to reach GROQ API")
-
-# Vercel ASGI handler
-handler = app
