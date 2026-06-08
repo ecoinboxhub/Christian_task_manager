@@ -89,6 +89,9 @@ async def chat(req: ChatRequest):
             data = resp.json()
             return ChatResponse(message=data["choices"][0]["message"]["content"])
     except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code, detail="GROQ API error")
+        detail = f"GROQ API error: {e.response.status_code}"
+        try: detail += f" - {e.response.json()}"
+        except: detail += f" - {e.response.text[:200]}"
+        raise HTTPException(status_code=e.response.status_code, detail=detail)
     except httpx.RequestError:
         raise HTTPException(status_code=502, detail="Failed to reach GROQ API")
