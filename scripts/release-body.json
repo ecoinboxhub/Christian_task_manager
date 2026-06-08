@@ -1,0 +1,4 @@
+{
+  "name": "BelieversFlow v2.0.1",
+  "body": "## ✝ BelieversFlow v2.0.1\n\n**Rebuilt & Updated APK**\n\n### What's New\n- 🎨 **Vibrant new icon**: Purple gradient bg + glowing gold cross + sparkles\n- ✝ **Emoji-enhanced app name**: ✝ BelieversFlow\n- 📦 **Clean rebuild** from scratch for reliable installation\n- ⚡ **Improved install compatibility** with preferExternal install location\n\n### Features\n- Task management with daily verses\n- Prayer tracker with daily prompts\n- Bible study planner with daily suggestions\n- NLP AI assistant (GROQ mixtral-8x7b-32768)\n- Glassmorphism UI with purple/gold theme\n- Offline-first with localStorage\n\n### Installation\n1. Download the APK below\n2. Open it on your Android device\n3. Enable \"Install from unknown sources\" if prompted\n4. Tap Install\n\n### Download\n[believersguidelite.apk](https://github.com/ecoinboxhub/Christian_task_manager/releases/download/v2.0.0/believersguidelite.apk) (3.6 MB)"
+}

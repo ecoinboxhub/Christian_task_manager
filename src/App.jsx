@@ -37,6 +37,25 @@ const STUDY_SUGGESTIONS = [
   { book: "Ephesians", chapter: 6, title: "Armor of God" },
 ]
 
+const BIBLE_VERSIONS = [
+  { id: "KJV", name: "King James Version" },
+  { id: "NKJV", name: "New King James Version" },
+  { id: "NIV", name: "New International Version" },
+  { id: "ESV", name: "English Standard Version" },
+  { id: "NASB", name: "New American Standard Bible" },
+  { id: "NLT", name: "New Living Translation" },
+  { id: "CSB", name: "Christian Standard Bible" },
+  { id: "AMP", name: "Amplified Bible" },
+]
+
+const MOODS = [
+  { emoji: "😊", label: "Joyful" },
+  { emoji: "🙂", label: "Grateful" },
+  { emoji: "😐", label: "Peaceful" },
+  { emoji: "😢", label: "Anxious" },
+  { emoji: "😭", label: "Struggling" },
+]
+
 const GREETINGS = [
   { hour: 5, msg: "Good morning! Rise and shine for the Lord!", icon: "🌅" },
   { hour: 12, msg: "Good afternoon! Keep walking in faith.", icon: "☀️" },
@@ -67,10 +86,24 @@ function getStreak(logs) {
   return streak
 }
 
+function formatTime(iso) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+}
+
+function formatDate(iso) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  return d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
 export default function App() {
   const [tasks, setTasks] = useState(() => loadState('btf_tasks', []))
   const [prayerLogs, setPrayerLogs] = useState(() => loadState('btf_prayerLogs', []))
   const [studyPlan, setStudyPlan] = useState(() => loadState('btf_studyPlan', { book: '', chapter: '' }))
+  const [diaryEntries, setDiaryEntries] = useState(() => loadState('btf_diary', []))
+  const [bibleVersion, setBibleVersion] = useState(() => loadState('btf_bibleVersion', 'KJV'))
   const [currentView, setCurrentView] = useState('tasks')
   const [currentFilter, setCurrentFilter] = useState('all')
   const [verseIndex, setVerseIndex] = useState(() => {
@@ -85,6 +118,7 @@ export default function App() {
   const [toast, setToast] = useState(null)
   const toastTimer = useRef(null)
   const [taskText, setTaskText] = useState('')
+  const [taskTime, setTaskTime] = useState('')
   const [taskCategory, setTaskCategory] = useState('spiritual')
   const [prayerMinutes, setPrayerMinutes] = useState('')
   const [studyBook, setStudyBook] = useState('')
@@ -94,6 +128,12 @@ export default function App() {
   const [chatHistory, setChatHistory] = useState(() => loadState('btf_chat', []))
   const [chatLoading, setChatLoading] = useState(false)
   const [todayPrayer] = useState(() => DAILY_PRAYERS[new Date().getDate() % DAILY_PRAYERS.length])
+  const [undoStack, setUndoStack] = useState([])
+  const [showGuide, setShowGuide] = useState(false)
+  const [diaryTitle, setDiaryTitle] = useState('')
+  const [diaryContent, setDiaryContent] = useState('')
+  const [diaryMood, setDiaryMood] = useState('😊')
+  const [editingDiary, setEditingDiary] = useState(null)
   const chatEnd = useRef(null)
   const chatInput = useRef(null)
 
@@ -104,13 +144,20 @@ export default function App() {
   useEffect(() => { saveState('btf_prayerLogs', prayerLogs) }, [prayerLogs])
   useEffect(() => { saveState('btf_studyPlan', studyPlan) }, [studyPlan])
   useEffect(() => { saveState('btf_chat', chatHistory) }, [chatHistory])
+  useEffect(() => { saveState('btf_diary', diaryEntries) }, [diaryEntries])
+  useEffect(() => { saveState('btf_bibleVersion', bibleVersion) }, [bibleVersion])
   useEffect(() => { if (chatOpen && chatInput.current) chatInput.current.focus() }, [chatOpen])
   useEffect(() => { chatEnd.current?.scrollIntoView({ behavior: 'smooth' }) }, [chatHistory])
 
-  const showToast = useCallback((msg, type = 'success') => {
+  const showToast = useCallback((msg, type = 'success', action = null) => {
     if (toastTimer.current) clearTimeout(toastTimer.current)
-    setToast({ message: msg, type })
-    toastTimer.current = setTimeout(() => setToast(null), 2500)
+    setToast({ message: msg, type, action })
+    toastTimer.current = setTimeout(() => setToast(null), 4000)
+  }, [])
+
+  const dismissToast = useCallback(() => {
+    if (toastTimer.current) clearTimeout(toastTimer.current)
+    setToast(null)
   }, [])
 
   const nextVerse = useCallback(() => {
@@ -124,10 +171,10 @@ export default function App() {
   const addTask = useCallback(() => {
     const text = taskText.trim()
     if (!text) return
-    setTasks(prev => [{ id: Date.now(), text, category: taskCategory, completed: false, createdAt: new Date().toISOString() }, ...prev])
-    setTaskText(''); showToast('Task added! ✨')
+    setTasks(prev => [{ id: Date.now(), text, time: taskTime, category: taskCategory, completed: false, createdAt: new Date().toISOString() }, ...prev])
+    setTaskText(''); setTaskTime(''); showToast('Task added! ✨')
     if (navigator.vibrate) navigator.vibrate(10)
-  }, [taskText, taskCategory, showToast])
+  }, [taskText, taskTime, taskCategory, showToast])
 
   const toggleTask = useCallback((id) => {
     setTasks(prev => {
@@ -138,8 +185,20 @@ export default function App() {
   }, [showToast])
 
   const deleteTask = useCallback((id) => {
-    setTasks(prev => prev.filter(t => t.id !== id)); showToast('Removed', 'info')
-  }, [showToast])
+    setTasks(prev => {
+      const item = prev.find(t => t.id === id)
+      if (item) {
+        const undoId = Date.now()
+        setUndoStack(s => [...s, { id: undoId, action: 'delete-task', data: item }])
+        setTimeout(() => setUndoStack(s => s.filter(u => u.id !== undoId)), 5000)
+        showToast('Task removed', 'info', { label: 'Undo', cb: () => {
+          setUndoStack(s => { const u = s.find(x => x.id === undoId); if (u) { setTasks(p => [...p, u.data]); return s.filter(x => x.id !== undoId) } return s })
+          dismissToast()
+        }})
+      }
+      return prev.filter(t => t.id !== id)
+    })
+  }, [showToast, dismissToast])
 
   const logPrayer = useCallback(() => {
     const m = parseInt(prayerMinutes)
@@ -160,6 +219,39 @@ export default function App() {
     setStudyBook(s.book); setStudyChapter(String(s.chapter))
     showToast(`📖 Suggested: ${s.book} ${s.chapter}`)
   }, [showToast])
+
+  const addDiaryEntry = useCallback(() => {
+    if (!diaryContent.trim()) return
+    if (editingDiary) {
+      setDiaryEntries(prev => prev.map(e => e.id === editingDiary.id ? { ...e, title: diaryTitle.trim(), content: diaryContent.trim(), mood: diaryMood } : e))
+      showToast('Diary updated! 📓')
+    } else {
+      setDiaryEntries(prev => [{ id: Date.now(), title: diaryTitle.trim(), content: diaryContent.trim(), mood: diaryMood, date: new Date().toISOString() }, ...prev])
+      showToast('Diary entry saved! 📓')
+    }
+    setDiaryTitle(''); setDiaryContent(''); setDiaryMood('😊'); setEditingDiary(null)
+  }, [diaryTitle, diaryContent, diaryMood, editingDiary, showToast])
+
+  const editDiaryEntry = useCallback((entry) => {
+    setEditingDiary(entry); setDiaryTitle(entry.title); setDiaryContent(entry.content); setDiaryMood(entry.mood)
+    setCurrentView('diary')
+  }, [])
+
+  const deleteDiaryEntry = useCallback((id) => {
+    setDiaryEntries(prev => {
+      const item = prev.find(e => e.id === id)
+      if (item) {
+        const undoId = Date.now()
+        setUndoStack(s => [...s, { id: undoId, action: 'delete-diary', data: item }])
+        setTimeout(() => setUndoStack(s => s.filter(u => u.id !== undoId)), 5000)
+        showToast('Entry removed', 'info', { label: 'Undo', cb: () => {
+          setUndoStack(s => { const u = s.find(x => x.id === undoId); if (u) { setDiaryEntries(p => [...p, u.data]); return s.filter(x => x.id !== undoId) } return s })
+          dismissToast()
+        }})
+      }
+      return prev.filter(e => e.id !== id)
+    })
+  }, [showToast, dismissToast])
 
   const sendChat = useCallback(async () => {
     const msg = chatMsg.trim()
@@ -211,7 +303,14 @@ export default function App() {
 
   return (
     <div id="app">
-      {toast && <div className={`toast toast-${toast.type}`}><span>{toast.message}</span></div>}
+      {toast && (
+        <div className={`toast toast-${toast.type}`}>
+          <span>{toast.message}</span>
+          {toast.action && (
+            <button className="toast-action" onClick={toast.action.cb}>{toast.action.label}</button>
+          )}
+        </div>
+      )}
 
       <header>
         <div className="greeting">{greeting.icon} {greeting.msg}</div>
@@ -236,9 +335,9 @@ export default function App() {
       </div>
 
       <nav id="main-nav">
-        {['tasks', 'spiritual'].map(view => (
+        {['tasks', 'spiritual', 'diary'].map(view => (
           <button key={view} className={`nav-item${currentView === view ? ' active' : ''}`} onClick={() => setCurrentView(view)}>
-            {view === 'tasks' ? '📋 Tasks' : '✨ Spiritual'}
+            {view === 'tasks' ? '📋 Tasks' : view === 'spiritual' ? '✨ Spiritual' : '📓 Diary'}
           </button>
         ))}
       </nav>
@@ -272,6 +371,7 @@ export default function App() {
             <div className="input-group">
               <input type="text" placeholder="What's next for the Kingdom?" value={taskText}
                 onChange={e => setTaskText(e.target.value)} onKeyDown={e => e.key === 'Enter' && addTask()} />
+              <input type="time" className="time-input" value={taskTime} onChange={e => setTaskTime(e.target.value)} />
               <select value={taskCategory} onChange={e => setTaskCategory(e.target.value)}>
                 <option value="spiritual">Spiritual ✨</option>
                 <option value="personal">Personal 🏠</option>
@@ -288,8 +388,11 @@ export default function App() {
                     <span className="checkmark" />
                   </label>
                   <div className="task-text">
-                    <span>{t.text}</span>
-                    <div className={`task-cat ${t.category}`}>{t.category}</div>
+                    <span className="task-title">{t.text}</span>
+                    <div className="task-meta">
+                      {t.time && <span className="task-time">🕐 {t.time}</span>}
+                      <span className={`task-cat ${t.category}`}>{t.category}</span>
+                    </div>
                   </div>
                   <button className="delete-btn" onClick={() => deleteTask(t.id)}>✕</button>
                 </li>
@@ -339,9 +442,24 @@ export default function App() {
             <div className="card">
               <div className="card-icon">📖</div>
               <h3>Bible Study Planner</h3>
-              <p>Plan your scripture reading. Today's suggestion: <strong>{todaySuggestion.book} {todaySuggestion.chapter}</strong> &mdash; <em>{todaySuggestion.title}</em></p>
+              <p>Plan your scripture reading.</p>
+
+              <div className="bible-version-select">
+                <label className="bv-label">Bible Version</label>
+                <select value={bibleVersion} onChange={e => setBibleVersion(e.target.value)}>
+                  {BIBLE_VERSIONS.map(bv => (
+                    <option key={bv.id} value={bv.id}>{bv.id} — {bv.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="today-suggestion">
+                Today's suggestion: <strong>{todaySuggestion.book} {todaySuggestion.chapter}</strong> &mdash; <em>{todaySuggestion.title}</em>
+                <span className="bv-badge">{bibleVersion}</span>
+              </div>
+
               <div className="study-inputs">
-                <input type="text" placeholder="Book" value={studyBook} onChange={e => setStudyBook(e.target.value)} />
+                <input type="text" placeholder="Book (e.g. Genesis)" value={studyBook} onChange={e => setStudyBook(e.target.value)} />
                 <input type="number" placeholder="Ch" value={studyChapter} onChange={e => setStudyChapter(e.target.value)} min="1" />
               </div>
               <div className="study-actions">
@@ -349,7 +467,7 @@ export default function App() {
                 <button className="btn-outline" onClick={() => useSuggestion(todaySuggestion)}>📌 Use Suggestion</button>
               </div>
               {studyPlan.book && (
-                <div className="study-current"><span className="study-icon">📖</span><span>Studying: {studyPlan.book} {studyPlan.chapter}</span></div>
+                <div className="study-current"><span className="study-icon">📖</span><span>Studying: {studyPlan.book} {studyPlan.chapter} <span className="bv-badge">{bibleVersion}</span></span></div>
               )}
             </div>
 
@@ -377,8 +495,69 @@ export default function App() {
                 <span className="suggestion-book">{todaySuggestion.book}</span>
                 <span className="suggestion-ch">Chapter {todaySuggestion.chapter}</span>
                 <span className="suggestion-title">&ldquo;{todaySuggestion.title}&rdquo;</span>
-                <button className="btn-sm" onClick={() => useSuggestion(todaySuggestion)}>Study This</button>
+                <div className="suggestion-footer">
+                  <span className="bv-badge">{bibleVersion}</span>
+                  <button className="btn-sm" onClick={() => useSuggestion(todaySuggestion)}>Study This</button>
+                </div>
               </div>
+            </div>
+          </section>
+        )}
+
+        {currentView === 'diary' && (
+          <section className="view">
+            <div className="card">
+              <div className="card-icon">📓</div>
+              <h3>{editingDiary ? 'Edit Entry' : 'New Diary Entry'}</h3>
+              <p>Record your thoughts, prayers, and reflections.</p>
+
+              <div className="diary-mood-select">
+                <label className="diary-label">How are you feeling?</label>
+                <div className="mood-picker">
+                  {MOODS.map(m => (
+                    <button key={m.emoji} className={`mood-btn${diaryMood === m.emoji ? ' active' : ''}`}
+                      onClick={() => setDiaryMood(m.emoji)} title={m.label}>
+                      {m.emoji}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <input type="text" placeholder="Title (optional)" value={diaryTitle}
+                onChange={e => setDiaryTitle(e.target.value)} />
+
+              <textarea className="diary-textarea" placeholder="Write your heart out..." value={diaryContent}
+                onChange={e => setDiaryContent(e.target.value)} rows={5} />
+
+              <div className="diary-actions">
+                <button onClick={addDiaryEntry}>{editingDiary ? '✏️ Update Entry' : '💾 Save Entry'}</button>
+                {editingDiary && (
+                  <button className="btn-outline" onClick={() => { setEditingDiary(null); setDiaryTitle(''); setDiaryContent(''); setDiaryMood('😊') }}>Cancel</button>
+                )}
+              </div>
+            </div>
+
+            <div className="diary-list">
+              <h3 className="section-title">📖 My Journal</h3>
+              {diaryEntries.map(entry => (
+                <div key={entry.id} className="diary-entry-card">
+                  <div className="diary-entry-header">
+                    <span className="diary-entry-mood">{entry.mood}</span>
+                    <div className="diary-entry-info">
+                      <span className="diary-entry-title">{entry.title || 'Untitled'}</span>
+                      <span className="diary-entry-date">{formatDate(entry.date)}{entry.date && ` at ${formatTime(entry.date)}`}</span>
+                    </div>
+                  </div>
+                  <p className="diary-entry-content">{entry.content}</p>
+                  <div className="diary-entry-actions">
+                    <button className="diary-edit-btn" onClick={() => editDiaryEntry(entry)}>✏️ Edit</button>
+                    <button className="diary-delete-btn" onClick={() => deleteDiaryEntry(entry.id)}>🗑 Delete</button>
+                  </div>
+                </div>
+              ))}
+              {diaryEntries.length === 0 && (
+                <div className="empty-state"><span className="empty-icon">📓</span><p>No journal entries yet. Start writing!</p></div>
+              )}
             </div>
           </section>
         )}
@@ -388,58 +567,116 @@ export default function App() {
         <p>Saved locally ✦ Offline ready ✦ Faith driven</p>
       </footer>
 
-      {GROQ_READY && (
-        <>
+      <div className="fab-group">
+        {GROQ_READY && (
+          <button className="fab-guide" onClick={() => setShowGuide(true)} title="AI Guide" aria-label="AI Guide">
+            ❓
+          </button>
+        )}
+        {GROQ_READY && (
           <button className={`chat-fab ${chatOpen ? ' open' : ''}`} onClick={() => setChatOpen(o => !o)}>
             {chatOpen ? '✕' : '💬'}
           </button>
+        )}
+      </div>
 
-          {chatOpen && (
-            <div className="chat-overlay">
-              <div className="chat-panel">
-                <div className="chat-header">
-                  <span className="chat-title">🤖 Faith Assistant</span>
-                  <button className="chat-close" onClick={() => setChatOpen(false)}>✕</button>
-                </div>
-                <div className="chat-body">
-                  {!chatHistory.length && (
-                    <div className="chat-welcome">
-                      <span className="chat-welcome-icon">🙏</span>
-                      <p>Hi! I'm your faith assistant. Ask me anything about scripture, prayer, life advice, or your tasks.</p>
-                      <div className="chat-suggestions">
-                        {["Give me a Bible verse for today", "How can I improve my prayer life?", "What does the Bible say about patience?", "Encourage me based on my tasks"].map((s, i) => (
-                          <button key={i} className="chat-suggestion-chip" onClick={() => { setChatMsg(s); setTimeout(() => chatInput.current?.focus(), 50) }}>
-                            {s}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {chatHistory.map((m, i) => (
-                    <div key={i} className={`chat-msg ${m.role}`}>
-                      <span className="chat-avatar">{m.role === 'user' ? '👤' : '🤖'}</span>
-                      <div className="chat-bubble">{m.content}</div>
-                    </div>
-                  ))}
-                  {chatLoading && (
-                    <div className="chat-msg assistant">
-                      <span className="chat-avatar">🤖</span>
-                      <div className="chat-bubble typing">
-                        <span className="dot-pulse" />
-                      </div>
-                    </div>
-                  )}
-                  <div ref={chatEnd} />
-                </div>
-                <div className="chat-input-area">
-                  <input ref={chatInput} type="text" placeholder="Ask anything..." value={chatMsg}
-                    onChange={e => setChatMsg(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendChat()} />
-                  <button onClick={sendChat} disabled={chatLoading || !chatMsg.trim()}>Send</button>
-                </div>
+      {showGuide && (
+        <div className="guide-overlay" onClick={() => setShowGuide(false)}>
+          <div className="guide-panel" onClick={e => e.stopPropagation()}>
+            <div className="guide-header">
+              <span className="guide-title">🤖 AI Service Guide</span>
+              <button className="guide-close" onClick={() => setShowGuide(false)}>✕</button>
+            </div>
+            <div className="guide-body">
+              <div className="guide-section">
+                <h4>What is the AI Assistant?</h4>
+                <p>The Faith Assistant is a conversational AI powered by <strong>GROQ's mixtral-8x7b-32768</strong> model. It provides scripture-based guidance, prayer support, and life advice.</p>
+              </div>
+
+              <div className="guide-section">
+                <h4>How to Set Up</h4>
+                <ol>
+                  <li>Get a free API key from <a href="https://console.groq.com" target="_blank" rel="noopener">console.groq.com</a></li>
+                  <li>Create a <code>.env</code> file in the project root (or edit the existing one)</li>
+                  <li>Add: <code>VITE_GROQ_API_KEY=your_key_here</code></li>
+                  <li>Restart the dev server or rebuild the APK</li>
+                </ol>
+              </div>
+
+              <div className="guide-section">
+                <h4>What It Can Do</h4>
+                <ul>
+                  <li>Share Bible verses and encouragement</li>
+                  <li>Answer questions about faith and scripture</li>
+                  <li>Provide prayer guidance</li>
+                  <li>Offer life advice from a Christian perspective</li>
+                  <li>Help with your tasks and spiritual goals</li>
+                </ul>
+              </div>
+
+              <div className="guide-section">
+                <h4>Privacy</h4>
+                <p>Your chats are stored locally in your browser's localStorage. They are <strong>never sent to any server</strong> except to GROQ's API for AI responses. The API key stays in your <code>.env</code> file and is never shared.</p>
+              </div>
+
+              <div className="guide-section">
+                <h4>Tips</h4>
+                <ul>
+                  <li>Be specific in your questions for better answers</li>
+                  <li>The AI remembers the last 6 messages of context</li>
+                  <li>You can ask about your current tasks</li>
+                  <li>All data persists offline via localStorage</li>
+                </ul>
               </div>
             </div>
-          )}
-        </>
+          </div>
+        </div>
+      )}
+
+      {GROQ_READY && chatOpen && (
+        <div className="chat-overlay">
+          <div className="chat-panel">
+            <div className="chat-header">
+              <span className="chat-title">🤖 Faith Assistant</span>
+              <button className="chat-close" onClick={() => setChatOpen(false)}>✕</button>
+            </div>
+            <div className="chat-body">
+              {!chatHistory.length && (
+                <div className="chat-welcome">
+                  <span className="chat-welcome-icon">🙏</span>
+                  <p>Hi! I'm your faith assistant. Ask me anything about scripture, prayer, life advice, or your tasks.</p>
+                  <div className="chat-suggestions">
+                    {["Give me a Bible verse for today", "How can I improve my prayer life?", "What does the Bible say about patience?", "Encourage me based on my tasks"].map((s, i) => (
+                      <button key={i} className="chat-suggestion-chip" onClick={() => { setChatMsg(s); setTimeout(() => chatInput.current?.focus(), 50) }}>
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {chatHistory.map((m, i) => (
+                <div key={i} className={`chat-msg ${m.role}`}>
+                  <span className="chat-avatar">{m.role === 'user' ? '👤' : '🤖'}</span>
+                  <div className="chat-bubble">{m.content}</div>
+                </div>
+              ))}
+              {chatLoading && (
+                <div className="chat-msg assistant">
+                  <span className="chat-avatar">🤖</span>
+                  <div className="chat-bubble typing">
+                    <span className="dot-pulse" />
+                  </div>
+                </div>
+              )}
+              <div ref={chatEnd} />
+            </div>
+            <div className="chat-input-area">
+              <input ref={chatInput} type="text" placeholder="Ask anything..." value={chatMsg}
+                onChange={e => setChatMsg(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendChat()} />
+              <button onClick={sendChat} disabled={chatLoading || !chatMsg.trim()}>Send</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
