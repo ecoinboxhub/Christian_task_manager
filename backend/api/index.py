@@ -1,6 +1,6 @@
 import os
 import httpx
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import List
@@ -33,18 +33,6 @@ class HealthResponse(BaseModel):
     version: str
     groq_configured: bool
 
-@app.get("/")
-@app.get("/api")
-@app.get("/debug")
-async def debug_root(req: Request):
-    return {
-        "url": str(req.url),
-        "path": req.url.path,
-        "headers": dict(req.headers),
-        "method": req.method,
-    }
-
-@app.get("/health", response_model=HealthResponse)
 @app.get("/api/health", response_model=HealthResponse)
 async def health():
     return HealthResponse(
@@ -53,7 +41,6 @@ async def health():
         groq_configured=bool(GROQ_API_KEY),
     )
 
-@app.post("/chat", response_model=ChatResponse)
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat(req: ChatRequest):
     if not GROQ_API_KEY:
