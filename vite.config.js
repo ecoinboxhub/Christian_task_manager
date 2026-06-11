@@ -52,16 +52,4 @@ export default defineConfig({
     }),
   ],
   base: './',
-  build: {
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          if (id.includes('hymns.js')) return 'hymns-data'
-          if (id.includes('devotional.js')) return 'devotional-data'
-          if (id.includes('hymnFallbackTunes.js')) return 'hymn-tunes'
-        },
-      },
-    },
-    chunkSizeWarningLimit: 500,
-  },
 })
