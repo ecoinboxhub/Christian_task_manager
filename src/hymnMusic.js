@@ -1,5 +1,3 @@
-import { FALLBACK_TUNES } from './hymnFallbackTunes.js'
-
 const API_URL = import.meta.env.VITE_API_URL || ''
 
 const PITCH_MAP = {
@@ -71,6 +69,7 @@ async function getTune(hymnId) {
     } catch {}
   }
 
+  const { FALLBACK_TUNES } = await import('./hymnFallbackTunes.js')
   const tune = FALLBACK_TUNES[hymnId] || null
   tuneCache[hymnId] = tune
   cachedHasTune[hymnId] = !!tune
@@ -121,4 +120,4 @@ async function hasTune(hymnId) {
   return !!tune
 }
 
-export { playHymn, stopHymn, isHymnPlaying, hasTune, FALLBACK_TUNES }
+export { playHymn, stopHymn, isHymnPlaying, hasTune }
