@@ -56,14 +56,12 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) return 'vendor-react'
-          if (id.includes('node_modules')) return 'vendor'
           if (id.includes('hymns.js')) return 'hymns-data'
           if (id.includes('devotional.js')) return 'devotional-data'
           if (id.includes('hymnFallbackTunes.js')) return 'hymn-tunes'
         },
       },
     },
-    chunkSizeWarningLimit: 300,
+    chunkSizeWarningLimit: 500,
   },
 })
